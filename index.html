@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: monospace;
+            background: white;
+            color: black;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-container {
+            flex: 1;
+            border: 2px solid black;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            max-height: calc(100vh - 60px);
+        }
+        
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border: 2px solid black;
+        }
+        
+        .user {
+            background: white;
+        }
+        
+        .assistant {
+            background: white;
+            border-left: 10px solid black;
+        }
+        
+        .input-container {
+            display: flex;
+            border: 2px solid black;
+            height: 40px;
+        }
+        
+        #input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 0 10px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 5px;
+            border: 2px solid black;
+            border-left: 10px solid black;
+            margin: 5px 0;
+        }
+        
+        .typing-indicator.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container" id="chatContainer"></div>
+    <div class="typing-indicator" id="typingIndicator">Thinking...</div>
+    <div class="input-container">
+        <input type="text" id="input" placeholder="Type your message here..." autofocus>
+    </div>
+    
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const input = document.getElementById('input');
+        const typingIndicator = document.getElementById('typingIndicator');
+        
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            messageDiv.textContent = content;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        async function getLLMResponse(message) {
+            // Dummy LLM response
+            const responses = [
+                "I understand your question. Let me think about that.",
+                "That's an interesting point. Here's what I think...",
+                "Based on what you've said, I would suggest...",
+                "I see what you mean. My response is...",
+                "Let me help you with that. The answer is..."
+            ];
+            
+            // Simulate processing delay
+            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+            
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+        
+        async function sendMessage() {
+            const message = input.value.trim();
+            if (!message) return;
+            
+            addMessage(message, true);
+            input.value = '';
+            
+            typingIndicator.classList.add('active');
+            
+            try {
+                const response = await getLLMResponse(message);
+                typingIndicator.classList.remove('active');
+                addMessage(response, false);
+            } catch (error) {
+                typingIndicator.classList.remove('active');
+                addMessage('Error: Failed to get response', false);
+            }
+        }
+        
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Focus input on load
+        input.focus();
+    </script>
+</body>
+</html>
