@@ -59,6 +59,8 @@
             color: rgba(155, 60, 60, 0.9);
         }
         
+        
+        
         .user {
             background: white;
         }
@@ -341,12 +343,30 @@ Keep the summary under 150 words and focus on the most relevant information.`,
         let conversationHistory = [];
         let isWaitingForResponse = false;
         
+        function processContent(content) {
+            // First escape HTML to prevent injection
+            let processed = content
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+            
+            // Remove think tags completely from output
+            processed = processed.replace(/&lt;think&gt;.*?&lt;\/think&gt;/gs, '');
+            
+            // Process asterisk highlighting for red text
+            processed = processed.replace(/\*([^*]+)\*/g, '<span class="red-text">$1</span>');
+            
+            return processed;
+        }
+        
         function addMessage(content, isUser = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
             
-            // Process content for asterisk highlighting
-            const processedContent = content.replace(/\*([^*]+)\*/g, '<span class="red-text">$1</span>');
+            // Process content with proper escaping and tag handling
+            const processedContent = processContent(content);
             messageDiv.innerHTML = processedContent;
             
             chatContainer.appendChild(messageDiv);
@@ -391,7 +411,7 @@ Keep the summary under 150 words and focus on the most relevant information.`,
                 temperature: CONFIG.temperature,
                 top_p: CONFIG.top_p,
                 min_p: CONFIG.min_p,
-                reasoning: { exclude: true, effort: "medium" },
+                reasoning: { exclude: false, effort: "medium" },
                 stream: true
             };
             
@@ -415,7 +435,9 @@ Keep the summary under 150 words and focus on the most relevant information.`,
         
         async function streamResponse(reader) {
             let fullResponse = '';
+            let fullReasoning = '';
             let messageDiv = null;
+            let reasoningDiv = null;
             
             try {
                 while (true) {
@@ -432,8 +454,31 @@ Keep the summary under 150 words and focus on the most relevant information.`,
                             
                             try {
                                 const parsed = JSON.parse(data);
-                                const content = parsed.choices?.[0]?.delta?.content || '';
+                                const delta = parsed.choices?.[0]?.delta || {};
+                                const content = delta.content || '';
+                                const reasoning = delta.reasoning || '';
                                 
+                                // Handle reasoning content
+                                if (reasoning) {
+                                    fullReasoning += reasoning;
+                                    
+                                    if (!reasoningDiv) {
+                                        reasoningDiv = document.createElement('div');
+                                        reasoningDiv.className = 'message reasoning';
+                                        reasoningDiv.style.background = 'rgba(240, 240, 240, 0.3)';
+                                        reasoningDiv.style.borderLeft = '5px solid #888';
+                                        reasoningDiv.style.fontSize = '0.9em';
+                                        reasoningDiv.style.marginBottom = '5px';
+                                        chatContainer.appendChild(reasoningDiv);
+                                    }
+                                    
+                                    // Process reasoning content
+                                    const processedReasoning = processContent(fullReasoning);
+                                    reasoningDiv.innerHTML = processedReasoning;
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }
+                                
+                                // Handle regular content
                                 if (content) {
                                     fullResponse += content;
                                     
@@ -443,8 +488,8 @@ Keep the summary under 150 words and focus on the most relevant information.`,
                                         chatContainer.appendChild(messageDiv);
                                     }
                                     
-                                    // Process content for asterisk highlighting
-                                    const processedContent = fullResponse.replace(/\*([^*]+)\*/g, '<span class="red-text">$1</span>');
+                                    // Process content with proper escaping and tag handling
+                                    const processedContent = processContent(fullResponse);
                                     messageDiv.innerHTML = processedContent;
                                     chatContainer.scrollTop = chatContainer.scrollHeight;
                                 }
@@ -458,7 +503,9 @@ Keep the summary under 150 words and focus on the most relevant information.`,
                 reader.releaseLock();
             }
             
-            return fullResponse.trim();
+            // Combine reasoning and response for storage
+            const combinedResponse = fullReasoning + fullResponse;
+            return combinedResponse.trim();
         }
         
         async function sendMessage() {
