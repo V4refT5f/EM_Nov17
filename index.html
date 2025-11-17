@@ -106,11 +106,36 @@
     </div>
     
     <script>
+        // Encryption/Decryption utilities
+        const CryptoUtils = {
+            key: 'MySecretKey123', // XOR key for encryption
+            encrypt(text) {
+                let encrypted = '';
+                for (let i = 0; i < text.length; i++) {
+                    encrypted += String.fromCharCode(text.charCodeAt(i) ^ this.key.charCodeAt(i % this.key.length));
+                }
+                return btoa(encrypted);
+            },
+            decrypt(encryptedText) {
+                try {
+                    const decoded = atob(encryptedText);
+                    let decrypted = '';
+                    for (let i = 0; i < decoded.length; i++) {
+                        decrypted += String.fromCharCode(decoded.charCodeAt(i) ^ this.key.charCodeAt(i % this.key.length));
+                    }
+                    return decrypted;
+                } catch (e) {
+                    console.error('Decryption failed:', e);
+                    return '';
+                }
+            }
+        };
+
         // Configuration
         const CONFIG = {
             borderSize: 1,
             maxHistory: 50,
-            apiKey: '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', // Configure your API key here
+            apiKey: CryptoUtils.decrypt('PhJ+ChFfE0VmB0wAUQIoHWUEUhRdTXgESgQGBCgdNgMFRFJDcwdAVwEDKB03UltDV0B/AE0FCgN/T2NUUxZXEC9RTFcDByhOYg=='), // Encrypted API key
             model: 'deepseek/deepseek-v3.1-terminus:exacto',
             summaryModel: 'x-ai/grok-4-fast',
             systemPrompt: 
@@ -454,11 +479,12 @@ Keep the summary under 150 words and focus on the most relevant information.`,
             while (attempts < maxAttempts) {
                 attempts++;
                 
+                let timeoutId;
                 try {
                     typingIndicator.classList.add('active');
                     
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
+                    timeoutId = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
                     
                     const response = await getLLMResponse(message);
                     clearTimeout(timeoutId);
@@ -486,7 +512,7 @@ Keep the summary under 150 words and focus on the most relevant information.`,
                     }
                     
                 } catch (error) {
-                    clearTimeout(timeoutId);
+                    if (timeoutId) clearTimeout(timeoutId);
                     typingIndicator.classList.remove('active');
                     
                     if (attempts === maxAttempts) {
