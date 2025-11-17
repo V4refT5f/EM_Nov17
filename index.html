@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LLM Chat</title>
     <style>
+        :root {
+            --border-size: 2px;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -23,17 +27,23 @@
         
         .chat-container {
             flex: 1;
-            border: 2px solid black;
+            border: var(--border-size) solid black;
             padding: 10px;
             overflow-y: auto;
             margin-bottom: 10px;
             max-height: calc(100vh - 60px);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .chat-container::-webkit-scrollbar {
+            display: none;
         }
         
         .message {
             margin: 5px 0;
             padding: 5px;
-            border: 2px solid black;
+            border: var(--border-size) solid black;
         }
         
         .user {
@@ -47,7 +57,7 @@
         
         .input-container {
             display: flex;
-            border: 2px solid black;
+            border: var(--border-size) solid black;
             height: 40px;
         }
         
@@ -63,7 +73,7 @@
         .typing-indicator {
             display: none;
             padding: 5px;
-            border: 2px solid black;
+            border: var(--border-size) solid black;
             border-left: 10px solid black;
             margin: 5px 0;
         }
