@@ -6,7 +6,7 @@
     <title>LLM Chat</title>
     <style>
         :root {
-            --border-size: 2px;
+            --border-size: 1px;
         }
         
         * {
@@ -44,6 +44,12 @@
             margin: 5px 0;
             padding: 5px;
             border: var(--border-size) solid black;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .red-text {
+            color: rgba(255, 0, 0, 0.7);
         }
         
         .user {
@@ -98,7 +104,11 @@
         function addMessage(content, isUser = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
-            messageDiv.textContent = content;
+            
+            // Process content for asterisk highlighting
+            const processedContent = content.replace(/\*([^*]+)\*/g, '<span class="red-text">$1</span>');
+            messageDiv.innerHTML = processedContent;
+            
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -120,8 +130,8 @@
         }
         
         async function sendMessage() {
-            const message = input.value.trim();
-            if (!message) return;
+            const message = input.value;
+            if (!message.trim()) return;
             
             addMessage(message, true);
             input.value = '';
